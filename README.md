@@ -1,4 +1,4 @@
-# System Monitoring Dashboard
+# DevOps - Cloud Native System Monitoring Dashboard
 
 A real-time system monitoring dashboard built with **Flask** and **Plotly** that displays CPU, memory, disk, and network metrics with a modern UI.
 ![image](https://github.com/user-attachments/assets/16c7a281-8d87-40a6-8680-e73cd8f51358)
