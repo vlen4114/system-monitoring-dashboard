@@ -1,78 +1,704 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>System Monitoring</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Monitoring Dashboard</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        .plotly-graph-div {
-            margin: auto;
-            width: 50%;
-            background-color: rgba(151, 128, 128, 0.688);
+        :root {
+            --primary: #4a6fa5;
+            --secondary: #166088;
+            --dark: #1a1a2e;
+            --darker: #16213e;
+            --light: #e6e6e6;
+            --danger: #ff5f5f;
+            --warning: #ffeb84;
+            --success: #d9f0a3;
+            --info: #86c7f3;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--dark);
+            color: var(--light);
+            line-height: 1.6;
+        }
+        
+        .container {
+            width: 95%;
+            max-width: 1800px;
+            margin: 0 auto;
             padding: 20px;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--secondary);
+        }
+        
+        h1 {
+            color: var(--light);
+            font-size: 2.2rem;
+        }
+        
+        .last-updated {
+            color: var(--info);
+            font-size: 0.9rem;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .card {
+            background-color: var(--darker);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .card-title {
+            font-size: 1.2rem;
+            color: var(--light);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card-icon {
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
+        
+        .gauge {
+            width: 100%;
+            height: 200px;
+        }
+        
+        .chart {
+            width: 100%;
+            height: 300px;
+        }
+        
+        .alert-container {
+            grid-column: 1 / -1;
+        }
+        
+        .alert {
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .alert-danger {
+            background-color: rgba(255, 95, 95, 0.2);
+            border-left: 4px solid var(--danger);
+        }
+        
+        .alert-warning {
+            background-color: rgba(255, 235, 132, 0.2);
+            border-left: 4px solid var(--warning);
+            color: var(--light);
+        }
+        
+        .alert-success {
+            background-color: rgba(217, 240, 163, 0.2);
+            border-left: 4px solid var(--success);
+        }
+        
+        .alert-icon {
+            font-size: 1.5rem;
+        }
+        
+        .process-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .process-table th, .process-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .process-table th {
+            background-color: rgba(74, 111, 165, 0.2);
+            color: var(--info);
+        }
+        
+        .process-table tr:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .badge {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .system-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .info-item {
+            background-color: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .info-label {
+            font-size: 0.8rem;
+            color: var(--info);
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .card {
+                padding: 15px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>System Monitoring</h1>
-        <div id="cpu-gauge"></div>
-        <div id="mem-gauge"></div>
-        {% if message %}
-        <div class="alert alert-danger">{{ message }}</div>
-        {% endif %}
+        <header>
+            <h1><i class="fas fa-tachometer-alt"></i> System Monitoring Dashboard</h1>
+            <div class="last-updated" id="last-updated"></div>
+        </header>
+        
+        <div class="alert-container" id="alerts-container"></div>
+        
+        <div class="dashboard">
+            <!-- CPU Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-microchip card-icon"></i> CPU Usage</h2>
+                </div>
+                <div class="gauge" id="cpu-gauge"></div>
+                <div class="chart" id="cpu-chart"></div>
+            </div>
+            
+            <!-- Memory Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-memory card-icon"></i> Memory Usage</h2>
+                </div>
+                <div class="gauge" id="mem-gauge"></div>
+                <div class="chart" id="mem-chart"></div>
+            </div>
+            
+            <!-- Disk Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-hdd card-icon"></i> Disk Usage</h2>
+                </div>
+                <div class="gauge" id="disk-gauge"></div>
+                <div class="chart" id="disk-chart"></div>
+            </div>
+            
+            <!-- Network Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-network-wired card-icon"></i> Network</h2>
+                </div>
+                <div class="gauge" id="network-gauge"></div>
+                <div class="chart" id="network-chart"></div>
+            </div>
+            
+            <!-- Processes Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-tasks card-icon"></i> Top Processes</h2>
+                    <span class="badge" id="process-count">0</span>
+                </div>
+                <table class="process-table" id="process-table">
+                    <thead>
+                        <tr>
+                            <th>PID</th>
+                            <th>Name</th>
+                            <th>User</th>
+                        </tr>
+                    </thead>
+                    <tbody id="process-list">
+                        <!-- Processes will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- System Info Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-info-circle card-icon"></i> System Information</h2>
+                </div>
+                <div class="system-info" id="system-info">
+                    <!-- System info will be inserted here -->
+                </div>
+            </div>
+        </div>
     </div>
+
     <script>
-        var cpuGauge = {
-            type: "indicator",
-            mode: "gauge+number",
-            value: {{ cpu_metric }},
-            gauge: {
-                axis: { range: [null, 100] },
-                bar: { color: "#1f77b4" },
-                bgcolor: "white",
-                borderwidth: 2,
-                bordercolor: "#ccc",
-                steps: [
-                    { range: [0, 50], color: "#d9f0a3" },
-                    { range: [50, 85], color: "#ffeb84" },
-                    { range: [85, 100], color: "#ff5f5f" }
-                ],
-                threshold: {
-                    line: { color: "red", width: 4 },
-                    thickness: 0.75,
-                    value: {{ cpu_metric }}
-                }
-            }
+        // Configuration
+        const REFRESH_INTERVAL = 2000; // 2 seconds
+        const MAX_HISTORY = 60; // Keep 60 data points (2 minutes at 2s intervals)
+        
+        // State management
+        let currentData = {};
+        let history = {
+            cpu: [],
+            memory: [],
+            disk: [],
+            network: [],
+            timestamps: []
         };
         
-        var memGauge = {
-            type: "indicator",
-            mode: "gauge+number",
-            value: {{ mem_metric }},
-            gauge: {
-                axis: { range: [null, 100] },
-                bar: { color: "#1f77b4" },
-                bgcolor: "white",
-                borderwidth: 2,
-                bordercolor: "#ccc",
-                steps: [
-                    { range: [0, 50], color: "#d9f0a3" },
-                    { range: [50, 85], color: "#ffeb84" },
-                    { range: [85, 100], color: "#ff5f5f" }
-                ],
-                threshold: {
-                    line: { color: "red", width: 4 },
-                    thickness: 0.75,
-                    value: {{ mem_metric }}
+        // Format bytes to human readable format
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+        
+        // Smoothly update a numeric display
+        function animateValue(element, start, end, duration = 500) {
+            const range = end - start;
+            let current = start;
+            const increment = end > start ? 1 : -1;
+            const stepTime = Math.abs(Math.floor(duration / range));
+            const timer = setInterval(() => {
+                current += increment;
+                element.textContent = current + (element.textContent.includes('%') ? '%' : '');
+                if (current === end) clearInterval(timer);
+            }, stepTime);
+        }
+        
+        // Create gauge chart
+        function createGauge(id, title, value, min = 0, max = 100) {
+            var gauge = {
+                type: "indicator",
+                mode: "gauge+number",
+                value: value,
+                gauge: {
+                    axis: { range: [min, max] },
+                    bar: { color: "#4a6fa5" },
+                    steps: [
+                        { range: [min, 50], color: "#d9f0a3" },
+                        { range: [50, 85], color: "#ffeb84" },
+                        { range: [85, max], color: "#ff5f5f" }
+                    ],
+                    threshold: {
+                        line: { color: "red", width: 4 },
+                        thickness: 0.75,
+                        value: value
+                    }
                 }
+            };
+            
+            var layout = { 
+                title: title,
+                margin: { t: 30, b: 10, l: 30, r: 30 },
+                font: { color: "#e6e6e6" },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(0,0,0,0)"
+            };
+            
+            Plotly.newPlot(id, [gauge], layout);
+        }
+        
+        // Update gauge chart with animation
+        function updateGauge(id, newValue) {
+            const chart = document.getElementById(id);
+            const data = [{...chart.data[0], value: newValue}];
+            const layout = {...chart.layout};
+            
+            // Update the threshold value
+            data[0].gauge.threshold.value = newValue;
+            
+            Plotly.animate(id, {
+                data: data,
+                layout: layout
+            }, {
+                transition: {
+                    duration: 500,
+                    easing: 'cubic-in-out'
+                },
+                frame: {
+                    duration: 500
+                }
+            });
+        }
+        
+        // Create line chart
+        function createLineChart(id, title, values, timestamps, color) {
+            var trace = {
+                x: timestamps,
+                y: values,
+                type: 'scatter',
+                mode: 'lines',
+                line: { color: color, width: 2 },
+                fill: 'tozeroy',
+                fillcolor: color.replace(')', ', 0.2)').replace('rgb', 'rgba')
+            };
+            
+            var layout = {
+                title: title,
+                margin: { t: 30, b: 30, l: 40, r: 20 },
+                font: { color: "#e6e6e6" },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(0,0,0,0)",
+                xaxis: { showgrid: false },
+                yaxis: { showgrid: true, gridcolor: 'rgba(255, 255, 255, 0.1)' }
+            };
+            
+            Plotly.newPlot(id, [trace], layout);
+        }
+        
+        // Update line chart with new data
+        function updateLineChart(id, newValue, newTimestamp) {
+            const chart = document.getElementById(id);
+            
+            // Add new data point
+            const newX = [...chart.data[0].x, newTimestamp];
+            const newY = [...chart.data[0].y, newValue];
+            
+            // Keep only the last MAX_HISTORY points
+            if (newX.length > MAX_HISTORY) {
+                newX.shift();
+                newY.shift();
             }
-        };
+            
+            Plotly.animate(id, {
+                data: [{...chart.data[0], x: newX, y: newY}],
+                layout: chart.layout
+            }, {
+                transition: {
+                    duration: 500,
+                    easing: 'cubic-in-out'
+                },
+                frame: {
+                    duration: 500
+                }
+            });
+        }
         
-        var cpuGaugeLayout = { title: "CPU Utilization" };
-        var memGaugeLayout = { title: "Memory Utilization" };
+        // Update system information
+        function updateSystemInfo(systemInfo) {
+            const systemInfoDiv = document.getElementById('system-info');
+            systemInfoDiv.innerHTML = '';
+            
+            // Create system info items
+            const infoItems = [
+                { label: 'System', value: systemInfo.system },
+                { label: 'Node Name', value: systemInfo.node },
+                { label: 'Release', value: systemInfo.release },
+                { label: 'Version', value: systemInfo.version },
+                { label: 'Machine', value: systemInfo.machine },
+                { label: 'Processor', value: systemInfo.processor },
+                { label: 'Boot Time', value: systemInfo.boot_time }
+            ];
+            
+            infoItems.forEach(item => {
+                const infoItem = document.createElement('div');
+                infoItem.className = 'info-item';
+                infoItem.innerHTML = `
+                    <div class="info-label">${item.label}</div>
+                    <div class="info-value">${item.value || 'N/A'}</div>
+                `;
+                systemInfoDiv.appendChild(infoItem);
+            });
+        }
         
-        Plotly.newPlot('cpu-gauge', [cpuGauge], cpuGaugeLayout);
-        Plotly.newPlot('mem-gauge', [memGauge], memGaugeLayout);
+        // Update process list with animation
+        function updateProcessList(processes) {
+            const processList = document.getElementById('process-list');
+            const rows = processList.querySelectorAll('tr') || [];
+            
+            // First, remove any extra rows
+            while (rows.length > processes.length) {
+                processList.removeChild(rows[rows.length - 1]);
+                rows.pop();
+            }
+            
+            // Update or add rows
+            processes.forEach((proc, index) => {
+                const rowHTML = `
+                    <td>${proc.pid}</td>
+                    <td>${proc.name}</td>
+                    <td>${proc.user}</td>
+                `;
+                
+                if (rows[index]) {
+                    // Update existing row
+                    const cells = rows[index].querySelectorAll('td');
+                    cells[0].textContent = proc.pid;
+                    cells[1].textContent = proc.name;
+                    cells[2].textContent = proc.user;
+                } else {
+                    // Add new row
+                    const row = document.createElement('tr');
+                    row.innerHTML = rowHTML;
+                    row.style.opacity = 0;
+                    processList.appendChild(row);
+                    
+                    // Fade in new row
+                    let opacity = 0;
+                    const fadeIn = setInterval(() => {
+                        opacity += 0.1;
+                        row.style.opacity = opacity;
+                        if (opacity >= 1) clearInterval(fadeIn);
+                    }, 50);
+                }
+            });
+        }
+        
+        // Update alerts with animation
+        function updateAlerts(alerts) {
+            const alertsContainer = document.getElementById('alerts-container');
+            const currentAlerts = alertsContainer.querySelectorAll('.alert') || [];
+            
+            // If no alerts and we already show "All systems normal", return
+            if (alerts.length === 0 && currentAlerts.length === 1 && 
+                currentAlerts[0].querySelector('span').textContent === 'All systems normal') {
+                return;
+            }
+            
+            // Remove all current alerts with fade out
+            currentAlerts.forEach(alert => {
+                let opacity = 1;
+                const fadeOut = setInterval(() => {
+                    opacity -= 0.1;
+                    alert.style.opacity = opacity;
+                    if (opacity <= 0) {
+                        clearInterval(fadeOut);
+                        alert.remove();
+                    }
+                }, 50);
+            });
+            
+            // After fade out completes, add new alerts
+            setTimeout(() => {
+                if (alerts.length === 0) {
+                    const noAlert = document.createElement('div');
+                    noAlert.className = 'alert alert-success';
+                    noAlert.style.opacity = 0;
+                    noAlert.innerHTML = `
+                        <i class="fas fa-check-circle alert-icon"></i>
+                        <span>All systems normal</span>
+                    `;
+                    alertsContainer.appendChild(noAlert);
+                    
+                    // Fade in
+                    let opacity = 0;
+                    const fadeIn = setInterval(() => {
+                        opacity += 0.1;
+                        noAlert.style.opacity = opacity;
+                        if (opacity >= 1) clearInterval(fadeIn);
+                    }, 50);
+                    return;
+                }
+                
+                alerts.forEach(alert => {
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = `alert alert-${alert.type}`;
+                    alertDiv.style.opacity = 0;
+                    
+                    let icon = '';
+                    if (alert.type === 'danger') icon = 'exclamation-circle';
+                    else if (alert.type === 'warning') icon = 'exclamation-triangle';
+                    else icon = 'info-circle';
+                    
+                    alertDiv.innerHTML = `
+                        <i class="fas fa-${icon} alert-icon"></i>
+                        <span>${alert.message}</span>
+                    `;
+                    alertsContainer.appendChild(alertDiv);
+                    
+                    // Fade in
+                    let opacity = 0;
+                    const fadeIn = setInterval(() => {
+                        opacity += 0.1;
+                        alertDiv.style.opacity = opacity;
+                        if (opacity >= 1) clearInterval(fadeIn);
+                    }, 50);
+                });
+            }, 300); // Wait for fade out to complete
+        }
+        
+        // Update network gauge
+        function updateNetworkGauge(sent, recv) {
+            const networkGauge = {
+                type: "indicator",
+                mode: "number+delta",
+                value: sent,
+                number: { suffix: " MB Sent" },
+                delta: { reference: recv, suffix: " MB Received" },
+                title: { text: "Network Traffic" }
+            };
+            
+            Plotly.react('network-gauge', [networkGauge], {
+                margin: { t: 30, b: 10, l: 30, r: 30 },
+                font: { color: "#e6e6e6" },
+                paper_bgcolor: "rgba(0,0,0,0)",
+                plot_bgcolor: "rgba(0,0,0,0)"
+            });
+        }
+        
+        // Process new data from server
+        function processNewData(data) {
+            // Update last updated time
+            document.getElementById('last-updated').textContent = 
+                `Last updated: ${new Date().toLocaleTimeString()}`;
+            
+            // Store current data
+            currentData = data;
+            
+            // Update history
+            history.cpu.push(data.cpu_metric);
+            history.memory.push(data.mem_metric);
+            history.disk.push(data.disk_metric);
+            history.network.push(data.net_sent + data.net_recv);
+            history.timestamps.push(new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}));
+            
+            // Trim history if needed
+            if (history.cpu.length > MAX_HISTORY) {
+                history.cpu.shift();
+                history.memory.shift();
+                history.disk.shift();
+                history.network.shift();
+                history.timestamps.shift();
+            }
+            
+            // Update gauges with animation
+            updateGauge('cpu-gauge', data.cpu_metric);
+            updateGauge('mem-gauge', data.mem_metric);
+            updateGauge('disk-gauge', data.disk_metric);
+            
+            // Update network gauge
+            updateNetworkGauge(data.net_sent, data.net_recv);
+            
+            // Update line charts
+            updateLineChart('cpu-chart', data.cpu_metric, history.timestamps[history.timestamps.length - 1]);
+            updateLineChart('mem-chart', data.mem_metric, history.timestamps[history.timestamps.length - 1]);
+            updateLineChart('disk-chart', data.disk_metric, history.timestamps[history.timestamps.length - 1]);
+            updateLineChart('network-chart', data.net_sent + data.net_recv, history.timestamps[history.timestamps.length - 1]);
+            
+            // Update Running Processes Count with animation
+            const processCountElement = document.getElementById("process-count");
+            if (processCountElement.textContent !== data.process_count.toString()) {
+                animateValue(processCountElement, parseInt(processCountElement.textContent || 0), data.process_count);
+            }
+            
+            // Update process list
+            updateProcessList(data.processes);
+            
+            // Update system info
+            updateSystemInfo(data.system_info);
+            
+            // Update alerts
+            updateAlerts(data.alerts);
+        }
+        
+        // Fetch data from server
+        async function fetchMetrics() {
+            try {
+                const response = await fetch('/api/data');
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const data = await response.json();
+                processNewData(data);
+                
+            } catch (error) {
+                console.error("Error fetching system metrics:", error);
+                
+                // Show error alert
+                updateAlerts([{
+                    type: "danger",
+                    message: "Error fetching data. Trying again..."
+                }]);
+            }
+        }
+        
+        // Initialize the dashboard
+        async function initializeDashboard() {
+            // First load - create all charts with empty data
+            createGauge('cpu-gauge', "CPU Utilization", 0);
+            createGauge('mem-gauge', "Memory Utilization", 0);
+            createGauge('disk-gauge', "Disk Usage", 0);
+            
+            // Network gauge
+            updateNetworkGauge(0, 0);
+            
+            // Line charts
+            createLineChart('cpu-chart', "CPU History", [], [], '#4a6fa5');
+            createLineChart('mem-chart', "Memory History", [], [], '#4a6fa5');
+            createLineChart('disk-chart', "Disk History", [], [], '#4a6fa5');
+            createLineChart('network-chart', "Network History", [], [], '#4a6fa5');
+            
+            // Initial data load
+            await fetchMetrics();
+            
+            // Set up periodic refresh
+            setInterval(fetchMetrics, REFRESH_INTERVAL);
+        }
+        
+        // Start the dashboard when page loads
+        window.addEventListener('DOMContentLoaded', initializeDashboard);
     </script>
 </body>
 </html>
